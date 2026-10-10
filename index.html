@@ -27,7 +27,7 @@ ul.i{margin:0;padding-left:18px}ul.i li{margin:4px 0}.mu{color:var(--mu)}.sec{di
 <header><h1>📊 Shopee Affiliate × Iklan Analytics</h1><nav id="nav"></nav><input id="q" placeholder="Cari iklan / tag / produk…" style="min-width:180px"><button class="btn s" id="th" title="Ganti tema">🌓</button><span id="svb" style="font-size:12px;color:#94a3b8"></span></header>
 <main>
 <div class="bar" id="flt"></div>
-<div id="v-dash" class="sec"></div><div id="v-unit" class="sec"></div><div id="v-prod" class="sec"></div><div id="v-map" class="sec"></div><div id="v-day" class="sec"></div>
+<div id="v-dash" class="sec"></div><div id="v-unit" class="sec"></div><div id="v-prod" class="sec"></div><div id="v-map" class="sec"></div><div id="v-day" class="sec"></div><div id="v-pred" class="sec"></div>
 <div id="v-info" class="sec"></div><div id="v-imp" class="sec"></div><div id="v-set" class="sec"></div>
 </main>
 <script>
@@ -66,7 +66,7 @@ return`<div class="tw"><table><tr>${cols.map(c=>`<th class="${c.n?'n':''}" data-
 const badge=v=>`<span class="bg ${v}">${v}</span>`,sg=n=>`<span class="${n>=0?'up':'dn'}">${nf(n)}</span>`;
 const ch=(id,cfg)=>{charts[id]&&charts[id].destroy();const c=document.getElementById(id);if(c){Chart.defaults.color=getComputedStyle(document.body).color;Chart.defaults.borderColor=getComputedStyle(document.body).getPropertyValue('--bd');charts[id]=new Chart(c,cfg)}};
 const trend=(a,b)=>{if(!b)return'';const p=(a-b)/Math.abs(b)*100;return`<span class="${p>2?'up':p<-2?'dn':'mu'}">${p>2?'↑':p<-2?'↓':'→'} ${Math.abs(p).toFixed(0)}%</span>`};
-function setup(){$('#nav').innerHTML=[['dash','Dashboard'],['unit','Ad Unit'],['prod','Produk'],['map','Mapping'],['day','Harian'],['info','Infografis'],['imp','Import'],['set','Pengaturan']].map(([k,l])=>`<button data-tab="${k}" class="${k==tab?'on':''}">${l}</button>`).join('')}
+function setup(){$('#nav').innerHTML=[['dash','Dashboard'],['unit','Ad Unit'],['prod','Produk'],['map','Mapping'],['day','Harian'],['pred','Prediksi'],['info','Infografis'],['imp','Import'],['set','Pengaturan']].map(([k,l])=>`<button data-tab="${k}" class="${k==tab?'on':''}">${l}</button>`).join('')}
 function flt(M){const [f,t]=range();const names=[...new Set([...D.ads.map(r=>r.a),...D.aff.map(r=>M.out[r.t]?.use||'(tanpa iklan) '+r.t)])].sort(),srcs=[...new Set(D.ads.map(r=>r.s))];
 $('#flt').innerHTML=`<select id="fp">${[['all','Semua tanggal'],['today','Hari terakhir'],['yesterday','Sehari sebelumnya'],['7','7 hari terakhir'],['30','30 hari terakhir'],['month','Bulan ini'],['day','Pilih satu hari'],['custom','Custom']].map(([v,l])=>`<option value="${v}" ${F.p==v?'selected':''}>${l}</option>`).join('')}</select>${F.p=='day'?`<input type="date" id="ff" value="${f}">`:F.p=='custom'?`<input type="date" id="ff" value="${f}"><input type="date" id="ft" value="${t}">`:`<span class="mu">${f} → ${t}</span>`}
 <select id="fa"><option value="all">Semua iklan/tag</option>${names.map(n=>`<option ${F.ad==n?'selected':''}>${n}</option>`).join('')}</select><select id="fs"><option value="all">Semua akun iklan</option>${srcs.map(n=>`<option ${F.src==n?'selected':''}>${n}</option>`).join('')}</select>
@@ -74,7 +74,7 @@ $('#flt').innerHTML=`<select id="fp">${[['all','Semua tanggal'],['today','Hari t
 // ---- render
 function render(){if(!D.ads.length&&!D.aff.length)tab='imp';setup();const M=matches(),[f,t]=range();flt(M);document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id=='v-'+tab));$('#flt').style.display=['dash','unit','prod','day','info'].includes(tab)?'flex':'none';
 const C=calc(f,t,M),len=dif(f,t)+1,P=calc(addD(f,-len),addD(f,-1),M);
-({dash:()=>dash(C,P,M),unit:()=>unit(C),prod:()=>prod(C,M,f,t),map:()=>map(M),day:()=>day(C),info:()=>info(C,f,t),imp:imp,set:sett})[tab]()}
+({dash:()=>dash(C,P,M),unit:()=>unit(C),prod:()=>prod(C,M,f,t),map:()=>map(M),day:()=>day(C),pred:pred,info:()=>info(C,f,t),imp:imp,set:sett})[tab]()}
 function insights(C,P){const L=[],R=C.R.filter(e=>!e.noad&&e.sp>0),w=[...R].filter(e=>e.st=='WINNER').sort((a,b)=>b.p-a.p),l=[...R].filter(e=>e.st=='LOSER').sort((a,b)=>a.p-b.p);
 w.slice(0,2).forEach(e=>L.push(`🟢 <b>${e.name}</b> menghasilkan komisi ${fmt(e.c)} dari spend ${fmt(e.sp)}. Profit ${fmt(e.p)}, ROI ${pc(e.roi)} → WINNER (${e.rec}).`));
 l.slice(0,3).forEach(e=>L.push(`🔴 <b>${e.name}</b>: spend ${fmt(e.sp)}, komisi ${fmt(e.c)}, ROI ${pc(e.roi)}. ${e.rec=='STOP'?'Disarankan hentikan.':'Disarankan evaluasi.'}`));
@@ -145,9 +145,34 @@ else if(a.id=='clr'){if(!CF){CF=1;a.textContent='Klik lagi untuk konfirmasi hapu
 let CF=0;
 function demo(){const E=new Date().toISOString().slice(0,10),ads=[['Promo Skincare',60000,'skincare'],['Promo Gadget',120000,'gadget'],['Promo Dapur',90000,'dapur']];let q=7;const r=()=>(q=(q*9301+49297)%233280)/233280;D={aff:[],clk:[],ads:[]};
 for(let i=13;i>=0;i--){const d=addD(E,-i);ads.forEach(([a,b,t],j)=>{const sp=b*(.8+r()*.4),lc=Math.round(sp/(120+j*60)),k=Math.round(lc*(.75+r()*.2)),o=Math.round(k*(.012+r()*.03*(2-j*.6))),c=o*(3000+j*1500+r()*2000);D.ads.push({d,a,s:'Demo',sp:Math.round(sp),im:lc*40,lc});D.clk.push({d,t,n:k});if(o)D.aff.push({d,t,p:'Produk '+a,st:o%2?'Selesai':'Tertunda',c:Math.round(c),o})})}sv('sa_data',D)}
-document.addEventListener('change',e=>{const t=e.target,d=t.dataset;if(t.id=='rsf'){const f=t.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{try{const j=JSON.parse(fr.result);if(!j.D||!j.D.aff||!j.D.ads)throw 0;D=j.D;OV=j.OV||{};Object.assign(S,j.S||{});sv('sa_data',D);sv('sa_ov',OV);sv('sa_set',S);LOG=['Backup dipulihkan: '+f.name];tab='dash'}catch(x){LOG=['File backup tidak valid.']}render()};fr.readAsText(f);return}if(t.id=='fp')F.p=t.value;else if(t.id=='ff')F.from=t.value;else if(t.id=='ft')F.to=t.value;else if(t.id=='fa')F.ad=t.value;else if(t.id=='fs')F.src=t.value;else if(t.id=='fc')F.cs=t.value;
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset;if(t.id=='rsf'){const f=t.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{try{const j=JSON.parse(fr.result);if(!j.D||!j.D.aff||!j.D.ads)throw 0;D=j.D;OV=j.OV||{};Object.assign(S,j.S||{});sv('sa_data',D);sv('sa_ov',OV);sv('sa_set',S);LOG=['Backup dipulihkan: '+f.name];tab='dash'}catch(x){LOG=['File backup tidak valid.']}render()};fr.readAsText(f);return}if(t.id=='fp')F.p=t.value;else if(t.id=='ff')F.from=t.value;else if(t.id=='ft')F.to=t.value;else if(t.id=='fa')F.ad=t.value;else if(t.id=='fs')F.src=t.value;else if(t.id=='fc')F.cs=t.value;else if(t.id=='pr-n')PR.n=t.value;else if(t.id=='pr-skip')PR.skip=+t.value;
 else if(d.mp!=null){OV[d.mp]=t.value?{ad:t.value}:'ignore';sv('sa_ov',OV)}else if(d.pi!=null){PEND[+d.pi].m[d.pk]=t.value;return}else if(d.s){S[d.s]=+t.value;sv('sa_set',S)}else if(t.id=='sp'){S.split=t.checked;sv('sa_set',S)}else return;render()});
 {const th=ld('sa_theme',null);if(th)document.documentElement.dataset.theme=th}
+
+// ---- prediksi komisi
+let PR={sp:'',n:'14',skip:0};
+const pnum=v=>{const x=parseFloat(String(v).replace(/\./g,'').replace(',','.'));return isFinite(x)?x:0},
+qt=(a,p)=>{const z=[...a].sort((x,y)=>x-y),i=(z.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return z[lo]+(z[hi]-z[lo])*(i-lo)},
+sm=(a,k)=>a.reduce((s,x)=>s+x[k],0);
+function predModel(){const sv0={ad:F.ad,cs:F.cs,src:F.src};F.ad=F.cs=F.src='all';let all;try{all=calc('0000-01-01','9999-12-31',matches()).days.filter(x=>x.sp>0)}finally{F.ad=sv0.ad;F.cs=sv0.cs;F.src=sv0.src}
+const use=all.slice(0,Math.max(0,all.length-(+PR.skip||0))),n=PR.n=='all'?use.length:+PR.n;return{all,use,n,h:use.slice(-n)}}
+function predRes(){const el=$('#pr-res');if(!el)return;const{use,n,h}=predModel(),sp=pnum(PR.sp);
+if(h.length<3){el.innerHTML='<div class="card">Data historis belum cukup. Dibutuhkan minimal 3 hari yang ada spend iklannya.</div>';return}
+const sS=sm(h,'sp'),sC=sm(h,'c'),sO=sm(h,'o'),roas=sC/sS,rs=h.map(x=>x.c/x.sp),lo=qt(rs,.25),hi=qt(rs,.75),errs=[];
+for(let i=5;i<use.length;i++){const b=use.slice(Math.max(0,i-n),i),p=use[i].sp*sm(b,'c')/sm(b,'sp');if(use[i].c>0)errs.push(Math.abs(p-use[i].c)/use[i].c)}
+const med=errs.length>=3?qt(errs,.5):null,good=errs.filter(e=>e<=.25).length;
+const K=sp?[['Estimasi Komisi Hari Ini',fmt(sp*roas),'kisaran '+fmt(sp*lo)+' – '+fmt(sp*hi)],['Estimasi Pesanan',nf(sp*sO/sS),'rata-rata '+nf(sO/h.length)+'/hari'],['Estimasi Profit',`<span class="${sp*roas-sp>=0?'up':'dn'}">${fmt(sp*roas-sp)}</span>`,'ROI '+pc((roas-1)*100)],['ROAS Historis',roas.toFixed(2)+'x','dari '+h.length+' hari']]:[];
+const rows=[...h].reverse().map(x=>({d:x.d,sp:x.sp,c:x.c,o:x.o,roas:x.c/x.sp}));
+el.innerHTML=(sp?`<div class="kpis">${K.map(k=>`<div class="kpi"><small>${k[0]}</small><b>${k[1]}</b>${k[2]}</div>`).join('')}</div>`:'<div class="card">Masukkan spending Meta hari ini untuk melihat estimasi komisi.</div>')+
+`<div class="card"><b>Seberapa akurat?</b><p class="mu">${med==null?'Belum cukup data untuk uji akurasi (butuh lebih dari 8 hari).':`Uji mundur pada ${errs.length} hari: rata-rata (median) estimasi meleset ±${(med*100).toFixed(0)}% dari komisi aktual, dan ${good} dari ${errs.length} hari meleset ≤25%.${med>.4?' Hasilnya cukup fluktuatif, jadi pakai kisaran, bukan angka tunggal.':''}`}</p></div>`+
+`<div class="card"><b>Data historis yang dipakai</b> <span class="mu">— ${h[0].d} s/d ${h[h.length-1].d}</span>${tbl('predh',[{k:'d',l:'Tanggal'},{k:'sp',l:'Spend',n:1,f:fmt},{k:'c',l:'Komisi',n:1,f:fmt},{k:'o',l:'Pesanan',n:1,f:nf},{k:'roas',l:'ROAS',n:1,f:v=>v.toFixed(2)+'x'}],rows,10)}</div>`}
+function pred(){const{all}=predModel(),last=all.length?all[all.length-1].d:'–',opt=(v,l,c)=>`<option value="${v}" ${String(c)==String(v)?'selected':''}>${l}</option>`;
+$('#v-pred').innerHTML=`<div class="card"><b>Prediksi Komisi Hari Ini</b><p class="mu">Komisi Shopee baru diperbarui H+1, jadi komisi hari ini belum bisa dilihat sekarang. Perkiraan dihitung dari ROAS historis (komisi ÷ spend) dikali spending Meta yang kamu masukkan. Semua status komisi dihitung, tanpa filter apa pun.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"><label><small class="mu">Spending Meta hari ini (Rp)</small><br><input id="pr-sp" inputmode="numeric" placeholder="mis. 500000" value="${PR.sp}"></label>
+<label><small class="mu">Basis data</small><br><select id="pr-n">${opt(7,'7 hari terakhir',PR.n)}${opt(14,'14 hari terakhir',PR.n)}${opt(30,'30 hari terakhir',PR.n)}${opt('all','Semua data',PR.n)}</select></label>
+<label><small class="mu">Abaikan hari terakhir</small><br><select id="pr-skip">${opt(0,'Tidak',PR.skip)}${opt(1,'1 hari',PR.skip)}${opt(2,'2 hari',PR.skip)}</select></label></div>
+<p class="mu">Data terakhir: ${last}. Kalau komisi hari terakhir baru masuk sebagian, abaikan 1 hari supaya ROAS tidak terlalu rendah.</p></div><div id="pr-res"></div>`;predRes()}
+addEventListener('input',e=>{if(e.target.id=='pr-sp'){PR.sp=e.target.value;predRes()}});
 $('#q').oninput=e=>{Q=e.target.value.toLowerCase();render()};render();
 (async()=>{const has=x=>x&&((x.aff||[]).length||(x.clk||[]).length||(x.ads||[]).length);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();const[d,o,s]=await Promise.all(['sa_data','sa_ov','sa_set'].map(idbGet));if(DIRTY){setSt(1);return}if(has(d)){D=d;if(o)OV=o;if(s)Object.assign(S,s);if(tab=='imp')tab='dash';setSt(1);render()}else if(has(D))sv('sa_data',D);else setSt(1)}catch(e){try{localStorage.setItem('sa_t','1');setSt(1)}catch(x){setSt(0)}}})();
 </script></body></html>
